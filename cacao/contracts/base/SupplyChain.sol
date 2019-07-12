@@ -1,4 +1,4 @@
-pragma solidity ^0.5.8;
+pragma solidity >=0.5.0;
 // Define a contract 'Supplychain'
 import "./../accesscontrol/ConsumerRole.sol";
 import "./../accesscontrol/DistributorRole.sol";
@@ -18,10 +18,6 @@ contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole 
 
     // Define a public mapping 'items' that maps the UPC to an Item.
     mapping(uint => Item) items;
-
-    // Define a public mapping 'itemsHistory' that maps the UPC to an array of TxHash,
-    // that track its journey through the supply chain -- to be sent from DApp.
-    mapping(uint => string[]) itemsHistory;
 
     // Define enum 'State' with the following values:
     enum State
@@ -168,19 +164,25 @@ contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole 
         string memory _originFarmLongitude, string memory _productNotes) public onlyFarmer {
         // Add the new item as part of Harvest
         Item memory item = _getItem(_upc);
+        item.ownerID = _originFarmerID;
         item.originFarmerID = _originFarmerID;
         item.originFarmInformation = _originFarmInformation;
         item.originFarmName = _originFarmName;
         item.originFarmLatitude = _originFarmLatitude;
         item.originFarmLongitude = _originFarmLongitude;
         item.productNotes = _productNotes;
-        item.sku = sku++;
+        item.upc = _upc;
+        item.sku = sku;
+        sku = sku + 1;
+        items[_upc] = item;
         // Emit the appropriate event
         emit Harvested(_upc);
     }
 
     // Define a function 'processtItem' that allows a farmer to mark an item 'Processed'
-    function processItem(uint _upc) public harvested(_upc) onlyFarmer {
+    function processItem(uint _upc) public harvested(_upc)
+    verifyCaller(_getItem(_upc).originFarmerID)
+    onlyFarmer {
         // Update the appropriate fields
         Item memory item = _getItem(_upc);
         item.itemState = State.Processed;
@@ -189,7 +191,9 @@ contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole 
     }
 
     // Define a function 'packItem' that allows a farmer to mark an item 'Packed'
-    function packItem(uint _upc) public processed(_upc) onlyFarmer {
+    function packItem(uint _upc) public processed(_upc)
+    verifyCaller(_getItem(_upc).originFarmerID)
+    onlyFarmer {
         // Update the appropriate fields
         Item memory item = _getItem(_upc);
         item.itemState = State.Packed;
@@ -198,7 +202,9 @@ contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole 
     }
 
     // Define a function 'sellItem' that allows a farmer to mark an item 'ForSale'
-    function sellItem(uint _upc, uint _price) public packed(_upc) onlyFarmer {
+    function sellItem(uint _upc, uint _price) public packed(_upc)
+    verifyCaller(_getItem(_upc).originFarmerID)
+    onlyFarmer {
         // Update the appropriate fields
         Item memory item = _getItem(_upc);
         item.itemState = State.ForSale;
@@ -227,7 +233,9 @@ contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole 
 
     // Define a function 'shipItem' that allows the distributor to mark an item 'Shipped'
     // Use the above modifers to check if the item is sold
-    function shipItem(uint _upc) public sold(_upc) onlyDistributor {
+    function shipItem(uint _upc) public sold(_upc)
+    verifyCaller(_getItem(_upc).distributorID)
+    onlyDistributor {
         // Update the appropriate fields
         Item memory item = _getItem(_upc);
         item.itemState = State.Shipped;
