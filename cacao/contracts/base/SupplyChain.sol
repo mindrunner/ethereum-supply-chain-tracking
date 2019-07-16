@@ -179,13 +179,14 @@ contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole 
         emit Harvested(_upc);
     }
 
-    // Define a function 'processtItem' that allows a farmer to mark an item 'Processed'
+    // Define a function 'processItem' that allows a farmer to mark an item 'Processed'
     function processItem(uint _upc) public harvested(_upc)
     verifyCaller(_getItem(_upc).originFarmerID)
     onlyFarmer {
         // Update the appropriate fields
         Item memory item = _getItem(_upc);
         item.itemState = State.Processed;
+        items[_upc] = item;
         // Emit the appropriate event
         emit Processed(_upc);
     }
@@ -197,18 +198,21 @@ contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole 
         // Update the appropriate fields
         Item memory item = _getItem(_upc);
         item.itemState = State.Packed;
+        items[_upc] = item;
         // Emit the appropriate event
         emit Packed(_upc);
     }
 
     // Define a function 'sellItem' that allows a farmer to mark an item 'ForSale'
-    function sellItem(uint _upc, uint _price) public packed(_upc)
+    function sellItem(uint _upc, uint _price) public
+    packed(_upc)
     verifyCaller(_getItem(_upc).originFarmerID)
     onlyFarmer {
         // Update the appropriate fields
         Item memory item = _getItem(_upc);
         item.itemState = State.ForSale;
         item.productPrice = _price;
+        items[_upc] = item;
         // Emit the appropriate event
         emit ForSale(_upc);
     }
@@ -227,6 +231,7 @@ contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole 
         item.itemState = State.Sold;
         // Transfer money to farmer
         item.originFarmerID.transfer(item.productPrice);
+        items[_upc] = item;
         // emit the appropriate event
         emit Sold(_upc);
     }
@@ -239,6 +244,7 @@ contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole 
         // Update the appropriate fields
         Item memory item = _getItem(_upc);
         item.itemState = State.Shipped;
+        items[_upc] = item;
         // Emit the appropriate event
         emit Shipped(_upc);
     }
@@ -251,6 +257,7 @@ contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole 
         item.ownerID = msg.sender;
         item.retailerID = msg.sender;
         item.itemState = State.Received;
+        items[_upc] = item;
         // Emit the appropriate event
         emit Received(_upc);
 
@@ -264,6 +271,7 @@ contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole 
         item.itemState = State.Purchased;
         item.ownerID = msg.sender;
         item.consumerID = msg.sender;
+        items[_upc] = item;
         // Emit the appropriate event
         emit Purchased(_upc);
     }

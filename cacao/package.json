@@ -13,7 +13,9 @@
   "license": "MIT",
   "devDependencies": {
     "lite-server": "^2.5.3",
-    "truffle": "5.0.1",
-    "truffle-assertions": "^0.9.1"
+    "ganache-cli": "^6.4.5",
+    "truffle": "5.0.27",
+    "truffle-assertions": "^0.9.1",
+    "truffle-hdwallet-provider": "^1.0.14"
   }
 }
